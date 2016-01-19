@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+    <script>
+    $(document).bind('mobileinit',function(){
+        $.mobile.changePage.defaults.changeHash = false;
+        $.mobile.hashListeningEnabled = false;
+        $.mobile.pushStateEnabled = false;
+    });
+    </script>
+    <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+</head>
+<body>
+
+<div data-role="page" id="page_intro">
+    <div data-role="content">
+        <div id="div_intro_canvas">
+            <canvas id="chart_pie_exercise" width="50" height="50"/>
+        </div>
+
+        <ul data-role="listview" data-inset="true">
+            <li><a href="detail.html" rel="external">2015/12/14</a></li>
+            <li><a href="detail.html" rel="external">2015/12/13</a></li>
+            <li><a href="detail.html" rel="external">2015/12/12</a></li>
+            <li><a href="detail.html" rel="external">2015/12/11</a></li>
+            <li><a href="detail.html" rel="external">2015/12/10</a></li>
+        </ul>
+    </div><!-- /content -->
+
+</div><!-- /page_intro-->
+
+<script>
+    var pie_data = get_workout_on(new Date())
+
+    function get_workout_on(date) {
+        return JSON.parse(Android.getWorkoutDataOn(date.getTime()))
+    }
+
+    window.onload = function(){
+				var ctx = document.getElementById("chart_pie_exercise").getContext("2d");
+				window.myDoughnut = new Chart(ctx).Doughnut(pie_data, {responsive : true});
+			};
+</script>
+
+</body>
+</html>

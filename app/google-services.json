@@ -1,0 +1,51 @@
+{
+  "project_info": {
+    "project_id": "innate-path-91508",
+    "project_number": "969279716189",
+    "name": "google-fit-platform-samples"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:969279716189:android:e62d79234c53e683",
+        "client_id": "android:comm.sjun.mygooglefit3",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "comm.sjun.mygooglefit3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "969279716189-fvse5g0fkerd25s7jkhuknbket9f0cjq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "comm.sjun.mygooglefit3",
+            "certificate_hash": "2C4F2B0FF829AB5A94417B1D95307EE84395EFE7"
+          }
+        }
+      ],
+      "api_key": [],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 1,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 2
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "client_info": [],
+  "ARTIFACT_VERSION": "1"
+}
