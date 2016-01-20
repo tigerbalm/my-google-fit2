@@ -1,6 +1,7 @@
 package comm.sjun.mygooglefit3;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,12 +18,29 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.data.Bucket;
+import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.result.DataReadResult;
+
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import comm.sjun.mygooglefit3.api.GoogleApiClientBridge;
 import comm.sjun.mygooglefit3.util.Constants;
 import timber.log.Timber;
+
+import static java.text.DateFormat.getDateInstance;
+import static java.text.DateFormat.getTimeInstance;
 
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -53,6 +71,8 @@ public class MainActivity extends AppCompatActivity
         // web setting
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
 
         webView.addJavascriptInterface(new JavaScriptInterface(this), "Android");
         webView.setWebChromeClient(new WebChromeClient() {
@@ -103,12 +123,19 @@ public class MainActivity extends AppCompatActivity
             googleApiClientBridge.setCurrentAccount(result.getSignInAccount());
 
             // TODO: start load-data and update webview
+            updateWebView();
         } else {
             googleApiClientBridge.setCurrentAccount(null);
 
             Intent signInIntent = googleApiClientBridge.getSignInIntent(googleApiClientToken);
             startActivityForResult(signInIntent, Constants.REQUEST_CODE_GOOGLE_PLUS_SIGN_IN);
         }
+    }
+
+    private void updateWebView() {
+        // read 1 week data
+        new ReadSessionTask().execute();
+        // update view
     }
 
     @Override
@@ -144,5 +171,121 @@ public class MainActivity extends AppCompatActivity
         // grant permissions or resolve an error in order to sign in. Refer to the javadoc for
         // ConnectionResult to see possible error codes.
         Timber.d("onConnectionFailed: %s", connectionResult);
+    }
+
+    private class ReadSessionTask extends AsyncTask<Void, Void, DataReadResult> {
+
+        @Override
+        protected DataReadResult doInBackground(Void... params) {
+            // Begin by creating the query.
+            DataReadRequest  readRequest = queryFitnessData();
+
+            // [START read_session]
+            // Invoke the Sessions API to fetch the session with the query and wait for the result
+            // of the read request. Note: Fitness.SessionsApi.readSession() requires the
+            // ACCESS_FINE_LOCATION permission.
+            DataReadResult dataReadResult =
+                    Fitness.HistoryApi.readData(googleApiClientBridge.getClient(googleApiClientToken),
+                            readRequest)
+                            .await(1, TimeUnit.MINUTES);
+
+            // For the sake of the sample, we'll print the data so we can see what we just added.
+            // In general, logging fitness information should be avoided for privacy reasons.
+            printData(dataReadResult);
+
+            return dataReadResult;
+        }
+
+        @Override
+        protected void onPostExecute(DataReadResult dataReadResult) {
+            super.onPostExecute(dataReadResult);
+
+
+        }
+
+        private DataReadRequest queryFitnessData() {
+            Timber.d("readFitnessSession: ");
+
+            // [START build_read_session_request]
+            // Set a start and end time for our query, using a start time of 1 week before this moment.
+            Calendar cal = Calendar.getInstance();
+            Date now = new Date();
+            cal.setTime(now);
+            long endTime = cal.getTimeInMillis();
+            cal.add(Calendar.WEEK_OF_YEAR, -1);
+            long startTime = cal.getTimeInMillis();
+
+            java.text.DateFormat dateFormat = getDateInstance();
+            Timber.d("Range Start: " + dateFormat.format(startTime));
+            Timber.d("Range End: " + dateFormat.format(endTime));
+
+            DataReadRequest readRequest = new DataReadRequest.Builder()
+                    // The data request can specify multiple data types to return, effectively
+                    // combining multiple data queries into one call.
+                    // In this example, it's very unlikely that the request is for several hundred
+                    // datapoints each consisting of a few steps and a timestamp.  The more likely
+                    // scenario is wanting to see how many steps were walked per day, for 7 days.
+                    .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                    // Analogous to a "Group By" in SQL, defines how data should be aggregated.
+                    // bucketByTime allows for a time span, whereas bucketBySession would allow
+                    // bucketing by "sessions", which would need to be defined in code.
+                    .bucketByTime(1, TimeUnit.DAYS)
+                    .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                    .build();
+            // [END build_read_data_request]
+
+            return readRequest;
+        }
+
+        /**
+         * Log a record of the query result. It's possible to get more constrained data sets by
+         * specifying a data source or data type, but for demonstrative purposes here's how one would
+         * dump all the data. In this sample, logging also prints to the device screen, so we can see
+         * what the query returns, but your app should not log fitness information as a privacy
+         * consideration. A better option would be to dump the data you receive to a local data
+         * directory to avoid exposing it to other applications.
+         */
+        private void printData(DataReadResult dataReadResult) {
+            // [START parse_read_data_result]
+            // If the DataReadRequest object specified aggregated data, dataReadResult will be returned
+            // as buckets containing DataSets, instead of just DataSets.
+            if (dataReadResult.getBuckets().size() > 0) {
+                Timber.d("Number of returned buckets of DataSets is: "
+                        + dataReadResult.getBuckets().size());
+                for (Bucket bucket : dataReadResult.getBuckets()) {
+                    List<DataSet> dataSets = bucket.getDataSets();
+                    Timber.d("Number of returned DataSets of buckets is: " + dataSets.size());
+                    for (DataSet dataSet : dataSets) {
+                        dumpDataSet(dataSet);
+                    }
+                }
+            } else if (dataReadResult.getDataSets().size() > 0) {
+                Timber.d("Number of returned DataSets is: "
+                        + dataReadResult.getDataSets().size());
+                for (DataSet dataSet : dataReadResult.getDataSets()) {
+                    dumpDataSet(dataSet);
+                }
+            }
+            // [END parse_read_data_result]
+        }
+
+        // [START parse_dataset]
+        private void dumpDataSet(DataSet dataSet) {
+            Timber.d("Data returned for Data type: " + dataSet.getDataType().getName());
+            DateFormat dateFormat = getDateInstance();
+
+            for (DataPoint dp : dataSet.getDataPoints()) {
+                Timber.d("Data point:");
+                Timber.d("\tType: " + dp.getDataType().getName());
+                Timber.d("\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
+                Timber.d("\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
+                for(Field field : dp.getDataType().getFields()) {
+                    Timber.d("\tField: " + field.getName() +
+                            " Value: " + dp.getValue(field));
+                }
+            }
+        }
+        // [END parse_dataset]
+
     }
 }

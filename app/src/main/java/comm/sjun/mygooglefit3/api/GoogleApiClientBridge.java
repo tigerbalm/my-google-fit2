@@ -50,7 +50,7 @@ public class GoogleApiClientBridge {
             .requestEmail()
             .requestId()
             .requestProfile()
-            .requestScopes(new Scope(Scopes.FITNESS_LOCATION_READ))
+            .requestScopes(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
             .build();
 
     GoogleApiClient googleApiClient = new GoogleApiClient.Builder(activity)
@@ -59,7 +59,8 @@ public class GoogleApiClientBridge {
         .addApi(Plus.API)
         .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
         .addApi(Nearby.MESSAGES_API)
-        .addApi(Fitness.SENSORS_API)
+        .addApi(Fitness.HISTORY_API)
+        .addApi(Fitness.SESSIONS_API)
         .build();
     String token = UUID.randomUUID().toString();
     clients.put(token, googleApiClient);
@@ -218,5 +219,9 @@ public class GoogleApiClientBridge {
 
   public interface GetProfileImagesCallback {
     void onSuccess();
+  }
+
+  public GoogleApiClient getClient(String token) {
+    return clients.get(token);
   }
 }
