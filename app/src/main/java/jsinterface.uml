@@ -1,0 +1,27 @@
+@startuml
+    title javascript interface
+
+    package JavaNative <<Rect>> {
+      class DataFetcher
+    }
+
+    package interface <<Rect>> {
+        class JavaScriptInterface {
+        .. Native to Script ..
+        refresh(list / detail)
+        .. Script to Native ..
+        fetchData(date)
+        }
+    }
+
+    package JavaScript <<Rect>> {
+      class Html << (H,orchid) >>
+    }
+
+    DataFetcher -> JavaScriptInterface
+    JavaScriptInterface -> Html
+
+    Html -> JavaScriptInterface
+    JavaScriptInterface -> DataFetcher
+
+@enduml

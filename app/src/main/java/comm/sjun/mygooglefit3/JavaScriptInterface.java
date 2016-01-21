@@ -21,6 +21,21 @@ public class JavaScriptInterface {
     }
 
     @JavascriptInterface
+    public void fetchData(long date) {
+        // start event loading
+    }
+
+    @JavascriptInterface
+    public void fetchDataRange(long start, long end) {
+        // start event loading
+    }
+
+    @JavascriptInterface
+    public void refreshView(String json) {
+        // update current html with json data
+    }
+
+    @JavascriptInterface
     public String getWorkoutDataOn(long timemillis) {
         return "[{\n" +
                 "            \"value\": 300,\n" +
