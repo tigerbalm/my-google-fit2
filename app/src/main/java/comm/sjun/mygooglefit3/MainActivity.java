@@ -3,10 +3,10 @@ package comm.sjun.mygooglefit3;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
@@ -26,22 +26,30 @@ import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
+import com.tbruyelle.rxpermissions.RxPermissions;
 
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Manifest;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import comm.sjun.mygooglefit3.api.GoogleApiClientBridge;
+import comm.sjun.mygooglefit3.data.WorkoutDB;
 import comm.sjun.mygooglefit3.util.Constants;
+import rx.functions.Action1;
 import timber.log.Timber;
 
 import static java.text.DateFormat.getDateInstance;
-import static java.text.DateFormat.getTimeInstance;
 
+// TODO:
+// 1. add permission handling
+// 2. add load data to client bridge
+// 3. add observable of WorkoutRecord
+// 4. add provider for workdout db
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     @Bind(R.id.webview)
@@ -50,15 +58,34 @@ public class MainActivity extends AppCompatActivity
     private GoogleApiClientBridge googleApiClientBridge;
     private String googleApiClientToken;
     private boolean shouldAutoLogin = true;
+    private JavaScriptBridge javascriptBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        RxPermissions.getInstance(this)
+                .request(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                .subscribe(new Action1<Boolean>() {
+                    @Override
+                    public void call(Boolean granted) {
+                        if (granted) {
+                            initialize();
+                        } else {
+                            finish();
+                        }
+                    }
+                });
+    }
+
+    private void initialize() {
         googleApiClientBridge = new GoogleApiClientBridge();
         googleApiClientToken = googleApiClientBridge.init(this, this, this);
+
+        javascriptBridge = new JavaScriptBridge(this, webView);
 
         setWebView();
     }
@@ -74,7 +101,7 @@ public class MainActivity extends AppCompatActivity
         webSettings.setAllowContentAccess(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
 
-        webView.addJavascriptInterface(new JavaScriptInterface(this), "Android");
+        webView.addJavascriptInterface(javascriptBridge, "Android");
         webView.setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 Log.d("MyGoogleFit2", cm.message() + " -- From line "
@@ -88,17 +115,20 @@ public class MainActivity extends AppCompatActivity
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    @Override public void onStart() {
+    @Override
+    public void onStart() {
         super.onStart();
         googleApiClientBridge.connect(googleApiClientToken);
     }
 
-    @Override public void onStop() {
+    @Override
+    public void onStop() {
         googleApiClientBridge.disconnect(googleApiClientToken);
         super.onStop();
     }
 
-    @Override public void onDestroy() {
+    @Override
+    public void onDestroy() {
         googleApiClientBridge.destroy(googleApiClientToken);
         super.onDestroy();
     }
@@ -123,6 +153,7 @@ public class MainActivity extends AppCompatActivity
             googleApiClientBridge.setCurrentAccount(result.getSignInAccount());
 
             // TODO: start load-data and update webview
+            // TODO: permission handling
             updateWebView();
         } else {
             googleApiClientBridge.setCurrentAccount(null);
@@ -178,7 +209,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected DataReadResult doInBackground(Void... params) {
             // Begin by creating the query.
-            DataReadRequest  readRequest = queryFitnessData();
+            DataReadRequest readRequest = queryFitnessData();
 
             // [START read_session]
             // Invoke the Sessions API to fetch the session with the query and wait for the result
@@ -191,20 +222,17 @@ public class MainActivity extends AppCompatActivity
 
             // For the sake of the sample, we'll print the data so we can see what we just added.
             // In general, logging fitness information should be avoided for privacy reasons.
-            printData(dataReadResult);
+            //printData(dataReadResult);
+
+            // memory db
+            WorkoutDB.setData(dataReadResult);
 
             return dataReadResult;
         }
 
-        @Override
-        protected void onPostExecute(DataReadResult dataReadResult) {
-            super.onPostExecute(dataReadResult);
-
-
-        }
-
         private DataReadRequest queryFitnessData() {
             Timber.d("readFitnessSession: ");
+
 
             // [START build_read_session_request]
             // Set a start and end time for our query, using a start time of 1 week before this moment.
@@ -226,6 +254,8 @@ public class MainActivity extends AppCompatActivity
                     // datapoints each consisting of a few steps and a timestamp.  The more likely
                     // scenario is wanting to see how many steps were walked per day, for 7 days.
                     .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                    .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+                    .aggregate(DataType.TYPE_CALORIES_EXPENDED, DataType.AGGREGATE_CALORIES_EXPENDED)
                     // Analogous to a "Group By" in SQL, defines how data should be aggregated.
                     // bucketByTime allows for a time span, whereas bucketBySession would allow
                     // bucketing by "sessions", which would need to be defined in code.
@@ -279,13 +309,20 @@ public class MainActivity extends AppCompatActivity
                 Timber.d("\tType: " + dp.getDataType().getName());
                 Timber.d("\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
                 Timber.d("\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-                for(Field field : dp.getDataType().getFields()) {
+                for (Field field : dp.getDataType().getFields()) {
                     Timber.d("\tField: " + field.getName() +
                             " Value: " + dp.getValue(field));
                 }
             }
         }
         // [END parse_dataset]
+
+        @Override
+        protected void onPostExecute(DataReadResult dataReadResult) {
+            super.onPostExecute(dataReadResult);
+
+            javascriptBridge.notifyDataSetChanged();
+        }
 
     }
 }

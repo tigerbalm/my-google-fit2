@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
 
 android {
     compileSdkVersion 'Google Apis:Google Apis:23'
@@ -37,6 +38,11 @@ dependencies {
 
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.jakewharton.timber:timber:4.1.0'
+
+    compile 'com.github.frankiesardo:auto-parcel:0.3.1'
+    apt 'com.github.frankiesardo:auto-parcel-processor:0.3.1'
+
+    compile 'com.tbruyelle.rxpermissions:rxpermissions:0.5.2@aar'
 }
 
 apply plugin: 'com.google.gms.google-services'

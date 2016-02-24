@@ -2,16 +2,19 @@ package comm.sjun.mygooglefit3;
 
 import android.content.Context;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 /**
  * Created by user on 2016-01-20.
  */
-public class JavaScriptInterface {
-    Context context;
+public class JavaScriptBridge {
+    private final WebView webview;
+    private final Context context;
 
-    public JavaScriptInterface(Context context) {
+    public JavaScriptBridge(Context context, WebView webView) {
         this.context = context;
+        this.webview = webView;
     }
 
     /** Show a toast from the web page */
@@ -55,5 +58,10 @@ public class JavaScriptInterface {
                 "            \"highlight\": \"#FFC870\",\n" +
                 "            \"label\": \"Cycling\"\n" +
                 "        }]";
+    }
+
+    @JavascriptInterface
+    public void notifyDataSetChanged() {
+        webview.loadUrl("javascript:refresh()");
     }
 }
