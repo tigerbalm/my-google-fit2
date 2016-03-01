@@ -67,18 +67,24 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        RxPermissions.getInstance(this)
-                .request(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                .subscribe(new Action1<Boolean>() {
-                    @Override
-                    public void call(Boolean granted) {
-                        if (granted) {
-                            initialize();
-                        } else {
-                            finish();
-                        }
-                    }
-                });
+        RxPermissions rxPermissions = RxPermissions.getInstance(this);
+
+        if (!rxPermissions.isGranted(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+            startPermissionActivity(android.Manifest.permission.ACCESS_FINE_LOCATION);
+            finish();
+            return;
+        }
+
+        initialize();
+    }
+
+    private void startPermissionActivity(String permission) {
+        Intent intent = new Intent();
+        intent.putExtra(PermissionActivity.INTENT, getIntent());
+        intent.putExtra(PermissionActivity.PERMISSION, permission);
+        //options.putSerializable(PermissionActivity.ACTIVITY, MainActivity.class);
+
+        PermissionActivity.startActivity(this, intent);
     }
 
     private void initialize() {
@@ -129,7 +135,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onDestroy() {
-        googleApiClientBridge.destroy(googleApiClientToken);
+        if (googleApiClientBridge != null) {
+            googleApiClientBridge.destroy(googleApiClientToken);
+        }
         super.onDestroy();
     }
 
