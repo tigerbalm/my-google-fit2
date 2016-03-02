@@ -33,20 +33,19 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.Manifest;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import comm.sjun.mygooglefit3.api.GoogleApiClientBridge;
 import comm.sjun.mygooglefit3.data.WorkoutDB;
 import comm.sjun.mygooglefit3.util.Constants;
-import rx.functions.Action1;
 import timber.log.Timber;
 
 import static java.text.DateFormat.getDateInstance;
 
 // TODO:
 // 1. add permission handling
+
 // 2. add load data to client bridge
 // 3. add observable of WorkoutRecord
 // 4. add provider for workdout db

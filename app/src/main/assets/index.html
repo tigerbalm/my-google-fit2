@@ -45,8 +45,14 @@
 
     window.onload = function(){
 				var ctx = document.getElementById("chart_pie_exercise").getContext("2d");
-				window.myDoughnut = new Chart(ctx).Doughnut(pie_data, {responsive : true});
+				window.myDoughnut = new Chart(ctx).Pie(pie_data, {responsive : true});
 			};
+
+	function refresh() {
+	    var pie_data = get_workout_on(new Date());
+	    window.myDoughnut.removeData();
+	    window.myDoughnut.update();
+	}
 </script>
 
 </body>

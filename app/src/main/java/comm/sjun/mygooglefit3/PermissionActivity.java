@@ -1,7 +1,6 @@
 package comm.sjun.mygooglefit3;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,7 +25,7 @@ public class PermissionActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, "onCreate: start");
-        
+
         final Intent intent = getIntent().getParcelableExtra(ARGUMENT);
 
         RxPermissions rxPermissions = RxPermissions.getInstance(this);
@@ -44,10 +43,11 @@ public class PermissionActivity extends Activity {
     }
 
     private void backToOriginalActivity(Intent intent) {
-        Intent newIntent = new Intent(this, intent.getClass());
+        Intent newIntent = new Intent();
+        newIntent.setComponent(intent.getComponent());
         newIntent.putExtras(intent);
 
-        this.startActivity(intent);
+        this.startActivity(newIntent);
     }
 
     public static void startActivity(Activity activity, Intent intent) {
