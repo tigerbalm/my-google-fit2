@@ -22,7 +22,7 @@
         return isMobile;
     }
 
-    if (_isMobile) {
+    if (!_isMobile()) {
         $.getScript('script/androidmock.js');
     }
 
@@ -41,11 +41,11 @@
         </div>
 
         <ul data-role="listview" data-inset="true">
-            <li><a href="./detail.html" id='test'>2015/12/14</a></li>
-            <li><a href="detail.html">2015/12/13</a></li>
-            <li><a href="detail.html">2015/12/12</a></li>
-            <li><a href="detail.html">2015/12/11</a></li>
-            <li><a href="detail.html">2015/12/10</a></li>
+            <li><a href="detail.html" rel="external">2015/12/14</a></li>
+            <li><a href="detail.html" rel="external">2015/12/13</a></li>
+            <li><a href="detail.html" rel="external">2015/12/12</a></li>
+            <li><a href="detail.html" rel="external">2015/12/11</a></li>
+            <li><a href="detail.html" rel="external">2015/12/10</a></li>
         </ul>
     </div><!-- /content -->
 
@@ -58,11 +58,11 @@
         return JSON.parse(Android.getWorkoutDataOn(date.getTime()))
     }
 
-    window.onload = function(){
-				var ctx = document.getElementById("chart_pie_exercise").getContext("2d");
-				window.myDoughnut = new Chart(ctx).Pie(pie_data, {responsive : true});
-			};
-
+    $(document).ready(function() {
+        var ctx = document.getElementById("chart_pie_exercise").getContext("2d");
+		window.myDoughnut = new Chart(ctx).Pie(pie_data, {responsive : true});
+    });
+        
 	function refresh() {
 	    var pie_data = get_workout_on(new Date());
 	    window.myDoughnut.removeData();
