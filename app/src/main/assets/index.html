@@ -34,40 +34,68 @@
 </head>
 <body>
 
-<div data-role="page" id="page_intro">
-    <div data-role="content">
-        <div id="div_intro_canvas">
-            <canvas id="chart_pie_exercise" width="50" height="50"/>
-        </div>
-
-        <ul data-role="listview" data-inset="true">
-            <li><a href="detail.html" rel="external">2015/12/14</a></li>
-            <li><a href="detail.html" rel="external">2015/12/13</a></li>
-            <li><a href="detail.html" rel="external">2015/12/12</a></li>
-            <li><a href="detail.html" rel="external">2015/12/11</a></li>
-            <li><a href="detail.html" rel="external">2015/12/10</a></li>
-        </ul>
-    </div><!-- /content -->
-
+<div data-role="page" id="page_intro" data-theme="a">
+    <!--  Today's workout -->
+	<div data-role="header" id="headerTodays" data-nobackbtn="true"  data-theme="a">
+        <h1> Today's workout </h1>
+    </div>	
+	<div data-role="content" id="contentTodays"  data-theme="a">
+		<div id="div_intro_canvas">
+            <canvas id="chart_pie_exercise" width="30" height="30"/>
+        </div>	
+	</div>
+	<!--<div data-role="footer" id="footerTodays"  data-theme="c"><h1> footer </h1></div>-->
+    
+    <!-- workout list -->
+    <div data-role="header" id="headerWorkoutList" data-nobackbtn="true"  data-theme="a">
+        <h1> Workouts </h1>
+    </div>
+    <div data-role="content" id="contentList" data-theme="a">
+        <ul data-role="listview" data-inset="true" data-theme="a" id="workout_listview"></ul>
+    </div>    
 </div><!-- /page_intro-->
 
 <script>
-    var pie_data = get_workout_on(new Date())
-
-    function get_workout_on(date) {
-        return JSON.parse(Android.getWorkoutDataOn(date.getTime()))
-    }
+    var DETAIL_PAGE = 'detail.html';
+    var workout_listview;
 
     $(document).ready(function() {
+        workout_listview = $('#workout_listview');
+        
+        Android.getTodayTotal('updateTodayTotal');
+        Android.getAllWorkouts('updateWorkoutList');
+    });
+    
+    function updateTodayTotal(jsonData) {
+        var pie_data = $.parseJSON(jsonData);
+        
         var ctx = document.getElementById("chart_pie_exercise").getContext("2d");
 		window.myDoughnut = new Chart(ctx).Pie(pie_data, {responsive : true});
-    });
+    }
+    
+    function updateWorkoutList(jsonData) {
+        var workoutList = $.parseJSON(jsonData);
         
-	function refresh() {
-	    var pie_data = get_workout_on(new Date());
-	    window.myDoughnut.removeData();
-	    window.myDoughnut.update();
-	}
+        for(i = 0; i < workoutList.length; i ++) {
+            var date = workoutList[i].date;
+            var steps = workoutList[i].steps;
+
+            var item = '<li><a href="javascript:showDetail(' + i + ')">' + 
+                            '<div>' + 
+                                '<span style="float: left;">' + date + '</span>' +
+                                '<span style="float: right;">' + steps + '</span>' +
+                                '<div style="clear:both;"></div>' +
+                            '</div>' +
+                       '</a></li>';
+            workout_listview.append(item);
+        }
+        
+        workout_listview.listview('refresh');
+    }
+    
+    function showDetail(date) {
+        Android.showDetail(date, DETAIL_PAGE);
+    }
 </script>
 
 </body>

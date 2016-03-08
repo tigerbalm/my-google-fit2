@@ -12,6 +12,19 @@
         $.mobile.hashListeningEnabled = false;
         $.mobile.pushStateEnabled = false;
     });
+    
+    function _isMobile(){
+        // if we want a more complete list use this: http://detectmobilebrowsers.com/
+        // str.test() is more efficent than str.match()
+        // remember str.test is case sensitive
+        var isMobile = (/iphone|ipod|android|ie|blackberry|fennec/).test
+             (navigator.userAgent.toLowerCase());
+        return isMobile;
+    }
+
+    if (!_isMobile()) {
+        $.getScript('script/androidmock.js');
+    }
     </script>
     <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 
@@ -20,22 +33,29 @@
 <body>
 
 <div data-role="page" id="page_detail">
-    <div data-role="content">
-        <div id="div_detail_line">
-            <canvas id="chart_line_hourly" width="300" height="300"/>
-        </div>
+    <div data-role="header" id="headerDetail" data-nobackbtn="true"  data-theme="a">
+        <h1> Today's workout details </h1>
+    </div>	
+	<div data-role="content" id="contentTodays"  data-theme="a">
+		<div id="div_detail_line">
+            <canvas id="chart_line_hourly" width="30" height="30"/>
+        </div>	
+	</div>
     
-        <div>
-            <p><h2>7am ~ 8pm</h2></p>
-            <p><h3>Steps: 1029</h3></p>
-            <p><h3>Calories: 102kcal</h3></p>
-            <p><h3>Distance: 1.05km</h3></p>
-        </div>
-    </div><!-- /content -->
-
+    <div data-role="header" id="header_selection" data-nobackbtn="true"  data-theme="a">
+        <!--<h1> 7am ~ 8am </h1>-->
+    </div>
+    <div data-role="content" id="selection_details" data-theme="a">
+        <!--<p><h3>Steps: 1029</h3></p>
+        <p><h3>Calories: 102kcal</h3></p>
+        <p><h3>Distance: 1.05km</h3></p>-->
+    </div>
 </div><!-- /page_deatil -->
 
 <script>
+    var header_selection_var;
+    var selection_details_var;
+    
     var line_data = {
         labels: ["6am", "7am", "8am", "9am", "10am", "11am", "12am", "1pm", "2pm", "3pm", "4pm", "5pm",
                     "6pm", "7pm", "8pm", "9pm", "10pm", "11pm", "12pm"],
@@ -54,10 +74,35 @@
         ]
     };
 
-    window.onload = function(){                
-				var ctx = document.getElementById("chart_line_hourly").getContext("2d");
-				window.myLine = new Chart(ctx).Line(line_data, {pointDot : true, responsive : true});
+    window.onload = function(){
+                header_selection_var = $('#header_selection');
+                selection_details_var = $('#selection_details');
+                
+                var id = window.location.search.substring(1);
+                var timeInMillis = calculateMillis(id);
+                
+                Android.getWorkoutDetails(timeInMillis, 'updateDetails');
 			};
+            
+    function calculateMillis(id) {
+        var myDate = new Date();
+        var dayOfMonth = myDate.getDate();
+        myDate.setDate(dayOfMonth - id);
+        
+        return myDate.getTime();    
+    }
+    
+    function updateDetails(jsonData) {
+        var ctx = document.getElementById("chart_line_hourly").getContext("2d");
+		window.myLine = new Chart(ctx).Line(line_data, {pointDot : true, responsive : true});
+        
+        header_selection_var.append('<h2> 7am ~ 8am </h2>');
+        
+        selection_details_var.append('<p><h3>Steps: 1029</h3></p>');
+        selection_details_var.append('<p><h3>Calories: 102kcal</h3></p>');
+        selection_details_var.append('<p><h3>Distance: 1.05km</h3></p>');        
+    }
+    
 </script>
 
 </body>
