@@ -34,7 +34,7 @@
 
 <div data-role="page" id="page_detail">
     <div data-role="header" id="headerDetail" data-nobackbtn="true"  data-theme="a">
-        <h1> Today's workout details </h1>
+        <p>Today's workout details</p>        
     </div>	
 	<div data-role="content" id="contentTodays"  data-theme="a">
 		<div id="div_detail_line">
@@ -43,66 +43,148 @@
 	</div>
     
     <div data-role="header" id="header_selection" data-nobackbtn="true"  data-theme="a">
-        <!--<h1> 7am ~ 8am </h1>-->
+        <p id='hour_title'></p>
     </div>
     <div data-role="content" id="selection_details" data-theme="a">
-        <!--<p><h3>Steps: 1029</h3></p>
-        <p><h3>Calories: 102kcal</h3></p>
-        <p><h3>Distance: 1.05km</h3></p>-->
+        <p id='hour_steps'><h3></h3></p>
+        <p id='hour_calories'><h3></h3></p>
+        <p id='hour_distance'><h3></h3></p>
     </div>
 </div><!-- /page_deatil -->
 
 <script>
-    var header_selection_var;
+    var header_selection_var;    
     var selection_details_var;
+    var header_hour_title;
+    var hour_steps;
+    var hour_calories;
+    var hour_distance;
     
-    var line_data = {
-        labels: ["6am", "7am", "8am", "9am", "10am", "11am", "12am", "1pm", "2pm", "3pm", "4pm", "5pm",
-                    "6pm", "7pm", "8pm", "9pm", "10pm", "11pm", "12pm"],
+    var line_data = {        
         datasets: [
             {
                 label: "My First dataset",
-                fillColor: "rgba(220,220,220,0.2)",
-                strokeColor: "rgba(220,220,220,1)",
-                pointColor: "rgba(220,220,220,1)",
+                fillColor: "rgba(220,220,0,0.2)",
+                strokeColor: "rgba(220,220,0,1)",
+                pointColor: "rgba(220,220,0,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(220,220,220,1)",
-                data: [100, 150, 230, 233, 256, 265, 265, 1500, 1510, 1520, 1522, 1750, 1800, 1888,
-                2000, 2050, 4010, 5555, 7850]
+                pointHighlightStroke: "rgba(220,220,0,1)"               
+            },
+            // accumulated data
+            {
+                label: "Accumulated dataset",
+                fillColor: "rgba(0,220,220,0.2)",
+                strokeColor: "rgba(0,220,220,1)",
+                pointColor: "rgba(0,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(0,220,220,1)"                
             }
         ]
     };
 
-    window.onload = function(){
+    $(document).ready(function() {
                 header_selection_var = $('#header_selection');
                 selection_details_var = $('#selection_details');
                 
+                header_hour_title = $('#hour_title');
+                hour_steps = $('#hour_steps');
+                hour_calories = $('#hour_calories');
+                hour_distance = $('#hour_distance');
+
                 var id = window.location.search.substring(1);
                 var timeInMillis = calculateMillis(id);
                 
                 Android.getWorkoutDetails(timeInMillis, 'updateDetails');
-			};
+			});
             
     function calculateMillis(id) {
         var myDate = new Date();
         var dayOfMonth = myDate.getDate();
         myDate.setDate(dayOfMonth - id);
         
-        return myDate.getTime();    
+        return myDate.getTime();
     }
     
     function updateDetails(jsonData) {
-        var ctx = document.getElementById("chart_line_hourly").getContext("2d");
+        var details = $.parseJSON(jsonData);
+
+        updateHour(details[0]);
+
+        line_data.labels = makeLabels(details);
+        line_data.datasets[0].data = makeData(details);
+        line_data.datasets[1].data = makeAccumulatedData(details);
+
+        var canvas = document.getElementById("chart_line_hourly");
+        var ctx = canvas.getContext("2d");
 		window.myLine = new Chart(ctx).Line(line_data, {pointDot : true, responsive : true});
-        
-        header_selection_var.append('<h2> 7am ~ 8am </h2>');
-        
-        selection_details_var.append('<p><h3>Steps: 1029</h3></p>');
-        selection_details_var.append('<p><h3>Calories: 102kcal</h3></p>');
-        selection_details_var.append('<p><h3>Distance: 1.05km</h3></p>');        
+        canvas.onclick = function(evt){
+            var activePoints = window.myLine.getPointsAtEvent(evt);
+            console.log('length=' + activePoints.length);
+
+            var middle = Math.floor(activePoints.length / 2);
+            var index = window.myLine.datasets[0].points.indexOf(activePoints[middle]);
+
+            if (index == -1) {
+                index = window.myLine.datasets[1].points.indexOf(activePoints[middle]);
+            }
+
+            console.log('index=' + index);
+            
+            updateHour(details[index]);
+        };
+    }
+
+    function updateHour(data) {
+        header_hour_title.text('Workouts at ' + displayTime(data.time));
+
+        hour_steps.text(data.steps + ' steps taken.');
+        hour_calories.text(data.calories + ' kcal burned.');
+        hour_distance.text(data.distance + ' km walked.');
+    }
+
+    function displayTime(time) {
+        if (time > 12) {
+            return (time - 12) + 'pm';
+        }
+
+        return time + 'am';
     }
     
+    function makeLabels(details) {
+        var labels = [];
+
+        for(var i = 0; i < details.length; i ++) {
+            labels.push(displayTime(details[i].time));
+        }
+
+        return labels;
+    }
+
+    function makeData(details) {
+        var data = [];
+
+        for(var i = 0; i < details.length; i ++) {
+            data.push(details[i].steps);
+        }
+
+        return data;
+    }
+
+    function makeAccumulatedData(details) {
+        var data = [];
+        var accumulated = 0;
+
+        for(var i = 0; i < details.length; i ++) {            
+            data.push(accumulated);
+
+            accumulated = accumulated + details[i].steps;
+        }
+
+        return data;
+    }
+
 </script>
 
 </body>
