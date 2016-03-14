@@ -1,4 +1,6 @@
-function AndroidMock() {}
+function AndroidMock() {
+    // empty
+}
 
 AndroidMock.prototype.getWorkoutDataOn = function(timemillis) {
 	return "[{\n" +
@@ -8,7 +10,7 @@ AndroidMock.prototype.getWorkoutDataOn = function(timemillis) {
 			"            \"label\": \"Walking\"\n" +
 			"        }\n" +
 			"]";
-}
+};
 
 var testTodayJson = 
                 "[\n" +
@@ -67,20 +69,20 @@ var testWorkoutDetail2 =
 AndroidMock.prototype.getTodayTotal = function(callback) {
     var func = window[callback];
     func(testTodayJson);
-}
+};
 
 AndroidMock.prototype.getAllWorkouts = function(callback) {
     var func = window[callback];
     func(testWorkoutListJson);
-}
+};
 
 AndroidMock.prototype.showDetail = function(id, page) {
     window.location.href = page + '?' + id;
-}
+};
 
 AndroidMock.prototype.getWorkoutDetails = function(millis, callback) {
     var func = window[callback];
     func(testWorkoutDetail2);
-}
+};
 
 var Android = new AndroidMock();
