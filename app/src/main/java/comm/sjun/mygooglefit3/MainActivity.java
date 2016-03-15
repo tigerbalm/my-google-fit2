@@ -327,8 +327,6 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(DataReadResult dataReadResult) {
             super.onPostExecute(dataReadResult);
-
-            javascriptBridge.notifyDataSetChanged();
         }
 
     }

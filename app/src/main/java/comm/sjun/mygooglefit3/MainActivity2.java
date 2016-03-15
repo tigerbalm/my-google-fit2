@@ -14,6 +14,8 @@ import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.DataReadRequest;
 import com.patloew.rxfit.RxFit;
 import com.tbruyelle.rxpermissions.RxPermissions;
 
@@ -53,10 +55,14 @@ public class MainActivity2 extends AppCompatActivity {
     }
 
     private void initialize() {
+        initializeWebView();
+
+        initializeFitness();
+    }
+
+    private void initializeFitness() {
         RxFit.init(this, new Api[] { Fitness.SESSIONS_API, Fitness.HISTORY_API }, new Scope[] { new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE) });
         RxFit.setDefaultTimeout(15, TimeUnit.SECONDS);
-
-        initializeWebView();
     }
 
     private void initializeWebView() {
