@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity
     private GoogleApiClientBridge googleApiClientBridge;
     private String googleApiClientToken;
     private boolean shouldAutoLogin = true;
-    private JavaScriptBridge javascriptBridge;
+    private JavaScriptBridge2 javascriptBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +90,8 @@ public class MainActivity extends AppCompatActivity
         googleApiClientBridge = new GoogleApiClientBridge();
         googleApiClientToken = googleApiClientBridge.init(this, this, this);
 
-        javascriptBridge = new JavaScriptBridge(this, webView);
+        javascriptBridge = new JavaScriptBridge2(this, webView,
+                googleApiClientBridge.getClient(googleApiClientToken));
 
         setWebView();
     }
@@ -115,9 +116,6 @@ public class MainActivity extends AppCompatActivity
                 return true;
             }
         });
-
-        // load html
-        webView.loadUrl("file:///android_asset/index.html");
     }
 
     @Override
@@ -171,9 +169,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void updateWebView() {
-        // read 1 week data
-        new ReadSessionTask().execute();
-        // update view
+        // load html
+        webView.loadUrl("file:///android_asset/index.html");
     }
 
     @Override

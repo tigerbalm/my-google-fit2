@@ -63,6 +63,8 @@ public class MainActivity2 extends AppCompatActivity {
     private void initializeFitness() {
         RxFit.init(this, new Api[] { Fitness.SESSIONS_API, Fitness.HISTORY_API }, new Scope[] { new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE) });
         RxFit.setDefaultTimeout(15, TimeUnit.SECONDS);
+
+
     }
 
     private void initializeWebView() {
